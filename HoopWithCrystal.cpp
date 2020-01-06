@@ -22,7 +22,10 @@ void HoopWithCrystal::drawHoop(GLuint texture, GLfloat rotation) {
 	glScalef(10, 10, 10);
 	glRotatef(rotation, 0, 1, 0);
 	glColor3f(crystalColorRed, crystalColorGreen, crystalColorBlue);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR);	
 	glutSolidIcosahedron();
+	glDisable(GL_BLEND);
 	glPopMatrix();
 
 	// Black blue background
@@ -37,12 +40,12 @@ void HoopWithCrystal::drawHoop(GLuint texture, GLfloat rotation) {
 	//rotate the quad slightly	
 	glTranslatef(positionX, positionY, positionZ);
 	glRotatef(-rotation, 0, 1, 0);
-	glEnable(GL_TEXTURE_GEN_S); //enable texture coordinate generation
+	//glEnable(GL_TEXTURE_GEN_S); //enable texture coordinate generation
 	glEnable(GL_TEXTURE_GEN_T);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	//bind the texture 
 	glutSolidTorus(5, radius, 8, 32);
-	glDisable(GL_TEXTURE_GEN_S); //enable texture coordinate generation
+	glDisable(GL_TEXTURE_GEN_S);
 	glDisable(GL_TEXTURE_GEN_T);
 	glPopMatrix();
 	glDisable(GL_TEXTURE_2D);

@@ -49,6 +49,7 @@ void Jupiter::renderPlanet(GLfloat rotation, GLuint texture) {
 	//glColor3f(0.0, 1.0, 0.0);
 	gluQuadricDrawStyle(sphere, GLU_FILL);
 	//bind the texture 
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	glBindTexture(GL_TEXTURE_2D, texture);
 	gluQuadricTexture(sphere, GL_TRUE);
 	gluQuadricNormals(sphere, GLU_SMOOTH);

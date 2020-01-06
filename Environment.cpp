@@ -8,6 +8,11 @@ Environment::Environment(GLuint texture) {
 }
 
 void Environment::setupLighting() {
+	GLfloat  whiteLightBright[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	GLfloat  redLight[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
+	GLfloat  whiteLightLessBright[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
+	GLfloat	 lightPos[4] = { -200, 60, -500, 0 };
+
 	glEnable(GL_DEPTH_TEST);	// Hidden surface removal    
 	glFrontFace(GL_CCW);// Counter clock-wise polygons face out
 	//glEnable(GL_CULL_FACE);		// Do not calculate inside
@@ -16,13 +21,13 @@ void Environment::setupLighting() {
 	glCullFace(GL_BACK);
 
 	//// Enable lighting
-	//glEnable(GL_LIGHTING);
-	//glEnable(GL_POINT_SMOOTH);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_POINT_SMOOTH);
 	////// Setup and enable light 0
-	//glLightModelfv(GL_LIGHT_MODEL_AMBIENT, whiteLightLessBright);
-	//glLightfv(GL_LIGHT0, GL_DIFFUSE, redLight);
-	//glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
-	//glEnable(GL_LIGHT0);
+	glLightModelfv(GL_LIGHT_MODEL_AMBIENT, whiteLightLessBright);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, redLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPos);
+	glEnable(GL_LIGHT0);
 }
 void Environment::drawEnvironment(GLuint texture) {
 	//// Enable colour tracking

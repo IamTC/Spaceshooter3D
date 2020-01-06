@@ -97,6 +97,8 @@
     <ClCompile Include="..\shared\glm.cpp" />
     <ClCompile Include="..\ShipHud.cpp" />
     <ClCompile Include="..\SpaceShooter3D.cpp" />
+    <ClCompile Include="EulerAngles.cpp" />
+    <ClCompile Include="Quaternion.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Environment.h" />
@@ -117,7 +119,10 @@
     <ClInclude Include="..\shared\wglext.h" />
     <ClInclude Include="..\ShipHud.h" />
     <ClInclude Include="..\wglext.h" />
+    <ClInclude Include="EulerAngles.h" />
+    <ClInclude Include="Quaternion.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="RotationMatrix.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\..\..\Textures tutorial copy\floor.tga" />

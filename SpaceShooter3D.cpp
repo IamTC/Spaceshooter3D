@@ -21,6 +21,9 @@
 #include "Jupiter.h"
 #include "HoopWithCrystal.h"
 #include "Environment.h"
+#include "src/EulerAngles.h"
+#include "src/Quaternion.h"
+#include "src/RotationMatrix.h"
 
 using namespace std;
 
@@ -46,12 +49,30 @@ GLint windowHeight = 600;
 GLfloat zMovement = 0;
 GLfloat yMovement = 0;
 GLfloat xMovement = 0;
+GLfloat zMovementEnd = 0;
+GLfloat yMovementEnd = 0;
+GLfloat xMovementEnd = 0;
+
 GLfloat zRotation = 0;
 GLfloat yRotation = 0;
 GLfloat xRotation = 0;
+GLfloat zRotationEnd = 0;
+GLfloat yRotationEnd = 0;
+GLfloat xRotationEnd = 0;
+
 bool hudOn = 1;
 GLfloat hoopsRotation = 0;
 int nextHoop = 0;
+
+// Globals.
+static float Xangle = 0.0, Yangle = 0.0, Zangle = 0.0; // Euler angles.
+static float matrixData[16]; // Rotation matrix values.
+static float t = 0.0; // Interpolation parameter.
+
+static Quaternion identityQuaternion(1.0, 0.0, 0.0, 0.0), q; // Global identity quaternion.
+static Quaternion rotationQuaternion(1.0, 0.0, 0.0, 0.0); // Global identity quaternion.
+static EulerAngles e; // Global Eular angle value.
+
 //below is simply a character array to hold the file names
 //note that you may need to replace the below with the full directory root depending on where you put your image files
 //if you put them where the exe is then you just need the name as below - THESE IMAGES  ARE IN THE DEBUG FOLDER, YOU CAN ADD ANY NEW ONES THERE 
@@ -73,6 +94,17 @@ GLint iWidth, iHeight, iComponents;
 GLenum eFormat;
 // this is a pointer to memory where the image bytes will be held 
 GLbyte* pBytes0;
+
+void readEulerAngles(EulerAngles* e)
+{
+	*e = *new EulerAngles(Xangle, Yangle, Zangle);
+}
+
+// Write RotationMatrix object r values to global matrixData.
+void writeMatrixData(RotationMatrix r)
+{
+	for (int i = 0; i < 16; i++) matrixData[i] = r.getMatrixData(i);
+}
 
 bool isCollided(HoopWithCrystal hoop) {
 	GLint xMin = hoop.positionX - hoop.radius;
@@ -121,11 +153,17 @@ void RenderScene(void)
 	glPushMatrix();
 
 	Environment env = Environment(textures[IMAGE4]);
-
-	glTranslatef(xMovement, yMovement, zMovement);
+	Quaternion curr = Quaternion(xRotation, yRotation, zRotation);
+	rotationQuaternion = identityQuaternion.multiplyBy(curr);
+	RotationMatrix rm = rotationQuaternion.quaternionToRotationMatrix();
+	for (int i = 0; i < 16; i++) {
+		matrixData[i]  = rm.getMatrixData(i);
+	}
+	//glMultMatrixf(matrixData);
 	glRotatef(zRotation, 0, 0, 1);
 	glRotatef(yRotation, 0, 1, 0);
 	glRotatef(xRotation, 1, 0, 0);
+	glTranslatef(xMovement, yMovement, zMovement);
 
 	/*GLfloat matrixMV[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, matrixMV);*/
@@ -201,6 +239,12 @@ void SetupRC()
 		// glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 		free(pBytes0);
 	}
+
+	// Initialize global matrixData.
+	for (int i = 0; i < 16; i++) {
+		matrixData[i] = 0.0;
+	}
+	matrixData[0] = matrixData[5] = matrixData[10] = matrixData[15] = 1.0;
 }
 
 
@@ -216,6 +260,49 @@ void TimerFunc(int value)
 		if (isCollided(*hoops[i])) {
 			(*hoops[i]).isHit = true;
 		}
+	}
+
+	if (zMovementEnd != 0) {
+		zMovement += (zMovementEnd / 5);
+		zMovementEnd -= (zMovementEnd / 5);
+	}
+	if (yMovementEnd != 0) {
+		yMovement += (yMovementEnd / 5);
+		yMovementEnd -= (yMovementEnd / 5);
+	}
+	if (xMovementEnd != 0) {
+		xMovement += (xMovementEnd / 5);
+		xMovementEnd -= (xMovementEnd / 5);
+	}
+	if (xRotationEnd != 0) {
+		xRotation += (xRotationEnd / 5);
+		if (xRotation >= 360) {
+			xRotation = 0;
+		}
+		if (xRotation < 0) {
+			xRotation = 360;
+		}
+		xRotationEnd -= (xRotationEnd / 5);
+	}
+	if (yRotationEnd != 0) {
+		yRotation += (yRotationEnd / 5);
+		if (yRotation >= 360) {
+			yRotation = 0;
+		}
+		if (yRotation < 0) {
+			yRotation = 360;
+		}
+		yRotationEnd -= (yRotationEnd / 5);
+	}
+	if (zRotationEnd != 0) {
+		zRotation += (zRotationEnd/ 5);
+		if (zRotation >= 360) {
+			zRotation = 0;
+		}
+		if (zRotation < 0) {
+			zRotation = 360;
+		}
+		zRotationEnd -= (zRotationEnd / 5);
 	}
 
 	glutPostRedisplay();
@@ -252,22 +339,16 @@ void keyboardFuncSpecial(int key, int x, int y) {
 	switch (key)
 	{
 	case GLUT_KEY_UP:
-		yMovement -= 10.0;
+		yMovementEnd -= 10.0;
 		break;
 	case GLUT_KEY_DOWN:
-		yMovement += 10.0;
+		yMovementEnd += 10.0;
 		break;
 	case GLUT_KEY_RIGHT:
-		zRotation -= 10;
-		if (zRotation <= 0) {
-			zRotation = 350;
-		}
+		zRotationEnd -= 10;
 		break;
 	case GLUT_KEY_LEFT:
-		zRotation += 10;
-		if (zRotation >= 360) {
-			zRotation = 0;
-		}
+		zRotationEnd += 10;
 		break;
 	default:
 		break;
@@ -278,48 +359,36 @@ void keyboardFunc(unsigned char key, int x, int y) {
 	switch (key)
 	{
 	case 'w':
-		zMovement += 10;
+		zMovementEnd += 10;
 		break;
 	case 's':
-		zMovement -= 10;
+		zMovementEnd -= 10;
 		break;
 	case 'a':
-		xMovement += 10;
+		xMovementEnd += 10;
 		break;
 	case 'd':
-		xMovement -= 10;
+		xMovementEnd -= 10;
 		break;
 	case 'q':
-		xRotation += 10;
-		if (xRotation >= 360) {
-			xRotation = 0;
-		}
+		xRotationEnd += 10;
 		break;
 	case 'e':
-		xRotation -= 10;
-		if (xRotation <= 0) {
-			xRotation = 350;
-		}
+		xRotationEnd -= 10;
 		break;
-	case 'z':
-		yRotation += 10;
-		if (yRotation >= 360) {
-			yRotation = 0;
-		}		
+	case 'z':	
+		yRotationEnd += 10;
 		break;
-	case 'x':
-		yRotation -= 10;
-		if (yRotation <= 0) {
-			yRotation = 350;
-		}		
+	case 'x':	
+		yRotationEnd -= 10;
 		break;
 	case 'h':
 		hudOn = !hudOn;
 		break;
 	case 'r':
-		zRotation = 0;
-		yRotation = 0;
-		xRotation = 0;
+		zRotationEnd = 0 - zRotation;
+		yRotationEnd = 0 - yRotation;
+		xRotationEnd = 0 - xRotation;
 		break;
 	default:
 		break;
