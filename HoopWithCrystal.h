@@ -6,6 +6,7 @@ public :
 	HoopWithCrystal(GLint pX, GLint pY, GLint pZ, GLint r);
 	void drawHoop(GLuint texture, GLfloat rotation);
 	void makeNext();
+	void revertColor();
 	GLint positionX;
 	GLint positionY;
 	GLint positionZ;

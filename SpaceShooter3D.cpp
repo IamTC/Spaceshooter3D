@@ -16,6 +16,7 @@
 #include "glm.h"
 #endif
 
+#include <random>
 #include "ShipHud.h"
 #include "Jupiter.h"
 #include "HoopWithCrystal.h"
@@ -57,6 +58,7 @@ const char* textureFiles[TEXTURE_COUNT] = { "jupiterC.tga", "hud.tga","starField
 
 const int hoopCount = 6;
 HoopWithCrystal* hoops[hoopCount];
+int collectedCount = 0;
 
 //for lighting if you want to experiment with these
 GLfloat mKa[4] = { 0.11f,0.06f,0.11f,1.0f }; //ambient
@@ -76,11 +78,16 @@ bool isCollided(HoopWithCrystal hoop) {
 	GLint xMax = hoop.positionX + hoop.radius;
 	GLint yMin = hoop.positionY - hoop.radius;
 	GLint yMax = hoop.positionY + hoop.radius;
-	GLint zMin = hoop.positionZ - 32;
-	GLint zMax = hoop.positionZ + 32;
-	return (xMovement * -1 >= xMin && xMovement * -1 <= xMax) &&
-		(yMovement * -1 >= yMin && yMovement * -1 <= yMax) &&
-		(zMovement * -1 >= zMin && zMovement * -1 <= zMax);
+	GLint zMin = hoop.positionZ * -1 - 32;
+	GLint zMax = hoop.positionZ * -1 + 32;
+	float theta = yRotation * (M_PI / 180);
+	float phi = zRotation * (M_PI / 180);
+	float xPosition = zMovement * sin(theta) + xMovement * -1 * cos(theta);
+	float zPosition = zMovement * cos(theta) - xMovement * -1 * sin(theta);
+	float yPosition = xMovement * sin(phi) + yMovement * -1 * cos(phi);
+	return (xPosition >= xMin && xPosition <= xMax) &&
+		(yPosition >= yMin && yPosition <= yMax) &&
+		(zPosition >= zMin && zPosition <= zMax);
 }
 
 // Called to draw scene
@@ -93,32 +100,30 @@ void RenderScene(void)
 	glLoadIdentity();
 
 	glTranslatef(xMovement, yMovement, zMovement);
-	glRotatef(zRotation, 0, 0, 1);
+	glRotatef(zRotation, 0, 0, 1);	
 	glRotatef(yRotation, 0, 1, 0);
 	Environment env = Environment(textures[IMAGE4]);
-	//view the scene
-	//gluLookAt(xMovement, yMovement, zMovement,//eye
-	//	xMovement, yMovement, 0,//focus
-	//	0.00, 1.00, 0.00);//up
 
 	GLfloat matrixMV[16];
 	glGetFloatv(GL_MODELVIEW_MATRIX, matrixMV);
-	cout << matrixMV[12] << " " << matrixMV[13] << " " << matrixMV[14] << endl;
+	//cout << matrixMV[12] << " " << matrixMV[13] << " " << matrixMV[14] << endl;
 
 	Jupiter jupiter = Jupiter(jupiterRotation, textures[IMAGE1]);
-	bool nextLoopChanged = false;
 	for (int i = 0; i < hoopCount; i++) {
-		if (!(*hoops[i]).isHit) {
-			(*hoops[i]).drawHoop(textures[IMAGE3], hoopsRotation);
-		}
-		else if ((*hoops[i]).isHit && i != hoopCount - 1 && nextHoop == i && !nextLoopChanged) {
-			(*hoops[i + 1]).makeNext();
+		(*hoops[i]).drawHoop(textures[IMAGE3], hoopsRotation);
+		if ((*hoops[i]).isHit && nextHoop == i) {
+			(*hoops[i]).revertColor();
+			if (i != hoopCount - 1) {
+				(*hoops[i + 1]).makeNext();
+			}
+			(*hoops[i]).isHit = false;
+			collectedCount++;
 			nextHoop++;
-			nextLoopChanged = true;
 		}
 	}
 	if (hudOn) {
 		ShipHud hud = ShipHud(windowWidth, windowHeight, textures[IMAGE2]);
+		hud.setDisplayInfo(collectedCount, xMovement, yMovement, zMovement, 0, yRotation, zRotation);
 	}
 
 	glutSwapBuffers();
@@ -179,7 +184,7 @@ void TimerFunc(int value)
 	for (int i = 0; i < hoopCount; i++) {
 		if (isCollided(*hoops[i])) {
 			(*hoops[i]).isHit = true;
-		}		
+		}
 	}
 
 	glutPostRedisplay();
@@ -216,17 +221,22 @@ void keyboardFuncSpecial(int key, int x, int y) {
 	switch (key)
 	{
 	case GLUT_KEY_UP:
-		yMovement += 10.0;
-		break;
-
-	case GLUT_KEY_DOWN:
 		yMovement -= 10.0;
 		break;
-	case GLUT_KEY_LEFT:
-		zRotation -= 10;
+	case GLUT_KEY_DOWN:
+		yMovement += 10.0;
 		break;
 	case GLUT_KEY_RIGHT:
+		zRotation -= 10;
+		if (zRotation <= 0) {
+			zRotation = 350;
+		}
+		break;
+	case GLUT_KEY_LEFT:
 		zRotation += 10;
+		if (zRotation >= 360) {
+			zRotation = 0;
+		}
 		break;
 	default:
 		break;
@@ -243,19 +253,24 @@ void keyboardFunc(unsigned char key, int x, int y) {
 		zMovement -= 10;
 		break;
 	case 'a':
-		xMovement -= 10;
-		break;
-	case 'd':
 		xMovement += 10;
 		break;
+	case 'd':
+		xMovement -= 10;
+		break;
 	case 'z':
-		yRotation += 10;
+		yRotation -= 10;
 		break;
 	case 'x':
-		yRotation -= 10;
+		yRotation += 10;
 		break;
 	case 'h':
 		hudOn = !hudOn;
+		break;
+	case 'r':
+		zRotation = 0;
+		yRotation = 0;
+		zRotation = 0;
 		break;
 	default:
 		break;
@@ -263,10 +278,44 @@ void keyboardFunc(unsigned char key, int x, int y) {
 }
 
 void setupHoops() {
-	for (int i = 0; i < hoopCount; i++) {
-		hoops[i] = new HoopWithCrystal(40 + (i * 10), 50 + (i * 10), -350 - (i * 10), 50);
-	}
+	//for (int i = 0; i < hoopCount; i++) {
+		//Random generation code copied from https://stackoverflow.com/a/7560564/9689970
+	std::random_device rd; // obtain a random number from hardware
+	std::mt19937 eng(rd()); // seed the generator
+	std::uniform_int_distribution<> randspace(20, 200); // define the range
+
+	hoops[0] = new HoopWithCrystal(40, 50, -100, 50);
+	hoops[1] = new HoopWithCrystal(-40, 50, -150, 50);
+	hoops[2] = new HoopWithCrystal(40, -50, -200, 50);
+	hoops[3] = new HoopWithCrystal(140, 50, -250, 50);
+	hoops[4] = new HoopWithCrystal(40, 150, -300, 50);
+	hoops[5] = new HoopWithCrystal(100, 100, -350, 50);
+	//}
 	(*hoops[0]).makeNext();
+}
+
+void printInstructions() {
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "The aim of the game is to move your first person character" << endl;
+	cout << "through space to collect the crystals withing the spanning hoops" << endl;
+	cout << endl;
+	cout << "When all hoops have been collected the game will reset" << endl;
+	cout << endl;
+	cout << "Controls: " << endl;
+	cout << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
 }
 
 

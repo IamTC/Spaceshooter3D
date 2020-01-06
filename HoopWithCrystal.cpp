@@ -55,3 +55,9 @@ void HoopWithCrystal::makeNext() {
 	crystalColorGreen = 1.0;
 	crystalColorBlue = 0.0;
 }
+
+void HoopWithCrystal::revertColor() {
+	crystalColorRed = 1.0;
+	crystalColorGreen = 1.0;
+	crystalColorBlue = 0.0;
+}
