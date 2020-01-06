@@ -33,7 +33,7 @@ void Jupiter::renderPlanet(GLfloat rotation, GLuint texture) {
 	glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
 
 	// Black blue background
-	//glClearColor(0.0f, 0.0f, 0.03f, 1.0f);
+	glClearColor(0.0f, 0.0f, 0.03f, 1.0f);
 	//add some lighting normals for each vertex
 	//draw the texture on the front
 	glEnable(GL_TEXTURE_2D);

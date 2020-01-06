@@ -51,6 +51,7 @@ void HoopWithCrystal::drawHoop(GLuint texture, GLfloat rotation) {
 }
 
 void HoopWithCrystal::makeNext() {
+	isHit = false;
 	crystalColorRed = 0.0;
 	crystalColorGreen = 1.0;
 	crystalColorBlue = 0.0;

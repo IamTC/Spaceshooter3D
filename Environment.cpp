@@ -49,7 +49,7 @@ void Environment::drawEnvironment(GLuint texture) {
 	glBindTexture(GL_TEXTURE_2D, texture);
 	gluQuadricTexture(sphere, GL_TRUE);
 	gluQuadricNormals(sphere, GLU_SMOOTH);
-	gluSphere(sphere, 500, 32, 32);
+	gluSphere(sphere, 1000, 32, 32);
 
 	glPopMatrix();
 }

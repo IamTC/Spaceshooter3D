@@ -48,6 +48,7 @@ GLfloat yMovement = 0;
 GLfloat xMovement = 0;
 GLfloat zRotation = 0;
 GLfloat yRotation = 0;
+GLfloat xRotation = 0;
 bool hudOn = 1;
 GLfloat hoopsRotation = 0;
 int nextHoop = 0;
@@ -90,22 +91,44 @@ bool isCollided(HoopWithCrystal hoop) {
 		(zPosition >= zMin && zPosition <= zMax);
 }
 
+
+void setupHoops() {
+	//for (int i = 0; i < hoopCount; i++) {
+		//Random generation code copied from https://stackoverflow.com/a/7560564/9689970
+	std::random_device rd; // obtain a random number from hardware
+	std::mt19937 eng(rd()); // seed the generator
+	std::uniform_int_distribution<> randspace(20, 200); // define the range
+
+	hoops[0] = new HoopWithCrystal(40, 50, -100, 50);
+	hoops[1] = new HoopWithCrystal(-40, 50, -150, 50);
+	hoops[2] = new HoopWithCrystal(40, -50, -200, 50);
+	hoops[3] = new HoopWithCrystal(140, 50, -250, 50);
+	hoops[4] = new HoopWithCrystal(40, 150, -300, 50);
+	hoops[5] = new HoopWithCrystal(100, 100, -350, 50);
+	//}
+	(*hoops[0]).makeNext();
+}
+
+
 // Called to draw scene
 void RenderScene(void)
 {
+	glClearColor(0.0, 0.0, 0.0, 1.0); //clear the screen to black
 	// Clear the window with current clearing colour
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glMatrixMode(GL_MODELVIEW);
 	glLoadIdentity();
+	glPushMatrix();
 
-	glTranslatef(xMovement, yMovement, zMovement);
-	glRotatef(zRotation, 0, 0, 1);	
-	glRotatef(yRotation, 0, 1, 0);
 	Environment env = Environment(textures[IMAGE4]);
 
-	GLfloat matrixMV[16];
-	glGetFloatv(GL_MODELVIEW_MATRIX, matrixMV);
+	glTranslatef(xMovement, yMovement, zMovement);
+	glRotatef(zRotation, 0, 0, 1);
+	glRotatef(yRotation, 0, 1, 0);
+	glRotatef(xRotation, 1, 0, 0);
+
+	/*GLfloat matrixMV[16];
+	glGetFloatv(GL_MODELVIEW_MATRIX, matrixMV);*/
 	//cout << matrixMV[12] << " " << matrixMV[13] << " " << matrixMV[14] << endl;
 
 	Jupiter jupiter = Jupiter(jupiterRotation, textures[IMAGE1]);
@@ -121,10 +144,18 @@ void RenderScene(void)
 			nextHoop++;
 		}
 	}
+
+	if (collectedCount == hoopCount) {
+		setupHoops();
+		collectedCount = 0;
+		nextHoop = 0;
+	}
+
 	if (hudOn) {
 		ShipHud hud = ShipHud(windowWidth, windowHeight, textures[IMAGE2]);
-		hud.setDisplayInfo(collectedCount, xMovement, yMovement, zMovement, 0, yRotation, zRotation);
+		hud.setDisplayInfo(collectedCount, xMovement, yMovement, zMovement, xRotation, yRotation, zRotation);
 	}
+	glPopMatrix();
 
 	glutSwapBuffers();
 }
@@ -258,11 +289,29 @@ void keyboardFunc(unsigned char key, int x, int y) {
 	case 'd':
 		xMovement -= 10;
 		break;
+	case 'q':
+		xRotation += 10;
+		if (xRotation >= 360) {
+			xRotation = 0;
+		}
+		break;
+	case 'e':
+		xRotation -= 10;
+		if (xRotation <= 0) {
+			xRotation = 350;
+		}
+		break;
 	case 'z':
-		yRotation -= 10;
+		yRotation += 10;
+		if (yRotation >= 360) {
+			yRotation = 0;
+		}		
 		break;
 	case 'x':
-		yRotation += 10;
+		yRotation -= 10;
+		if (yRotation <= 0) {
+			yRotation = 350;
+		}		
 		break;
 	case 'h':
 		hudOn = !hudOn;
@@ -270,28 +319,11 @@ void keyboardFunc(unsigned char key, int x, int y) {
 	case 'r':
 		zRotation = 0;
 		yRotation = 0;
-		zRotation = 0;
+		xRotation = 0;
 		break;
 	default:
 		break;
 	}
-}
-
-void setupHoops() {
-	//for (int i = 0; i < hoopCount; i++) {
-		//Random generation code copied from https://stackoverflow.com/a/7560564/9689970
-	std::random_device rd; // obtain a random number from hardware
-	std::mt19937 eng(rd()); // seed the generator
-	std::uniform_int_distribution<> randspace(20, 200); // define the range
-
-	hoops[0] = new HoopWithCrystal(40, 50, -100, 50);
-	hoops[1] = new HoopWithCrystal(-40, 50, -150, 50);
-	hoops[2] = new HoopWithCrystal(40, -50, -200, 50);
-	hoops[3] = new HoopWithCrystal(140, 50, -250, 50);
-	hoops[4] = new HoopWithCrystal(40, 150, -300, 50);
-	hoops[5] = new HoopWithCrystal(100, 100, -350, 50);
-	//}
-	(*hoops[0]).makeNext();
 }
 
 void printInstructions() {
@@ -303,19 +335,19 @@ void printInstructions() {
 	cout << endl;
 	cout << "Controls: " << endl;
 	cout << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
-	cout << "Welcome to a 3D Space Game designed in OpenGL with GLUT" << endl;
+	cout << "Left Arrow: Roll the Ship Left" << endl;
+	cout << "Right Arrow: Roll the Ship Right" << endl;
+	cout << "Up Arrow: Move the ship up" << endl;
+	cout << "Down Arrow: Move the ship down" << endl;
+	cout << "Q: Rotate the ship backwards" << endl;
+	cout << "E: Rotate the ship forwards" << endl;
+	cout << "S: Move the ship backwards" << endl;
+	cout << "W: Move the ship forwards" << endl;
+	cout << "D: Move the ship right" << endl;
+	cout << "A: Move the ship left" << endl;
+	cout << "Z: Rotate the ship left" << endl;
+	cout << "X: Rotatae the ship right" << endl;
+	cout << "H: Turn the HUD ON/OFF" << endl;
 }
 
 
@@ -332,6 +364,7 @@ int main(int argc, char* argv[])
 	glutTimerFunc(25, TimerFunc, 1);
 	SetupRC();
 	setupHoops();
+	printInstructions();
 	glutMainLoop();
 	return 0;
 }

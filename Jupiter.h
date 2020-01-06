@@ -6,7 +6,7 @@ private:
 	GLfloat  whiteLightBright[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
 	GLfloat  redLight[4] = { 1.0f, 0.0f, 0.0f, 1.0f };
 	GLfloat  whiteLightLessBright[4] = { 0.8f, 0.8f, 0.8f, 1.0f };
-	GLfloat	 lightPos[4] = { 0, 0, 0, 0};
+	GLfloat	 lightPos[4] = { 100, 50, -400, 0};
 	static GLUquadric* sphere;
 	void setupLighting();
 	void renderPlanet(GLfloat rotation, GLuint texture);
